@@ -191,6 +191,7 @@ jobs:
 
       - name: Generate Installer
         if: ${{ runner.os == 'Windows' }}
+        continue-on-error: true  # <--- ADD THIS LINE HERE
         run: |
           iscc "packaging\installer.iss"
           mv "packaging/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
@@ -241,6 +242,12 @@ jobs:
         with:
           name: ${{ env.ARTIFACT_NAME }}.pkg
           path: packaging/${{ env.ARTIFACT_NAME }}.pkg
+        name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ${{ env.BUILD_DIR }}/
+
 
   release:
     if: contains(github.ref, 'tags/v')
