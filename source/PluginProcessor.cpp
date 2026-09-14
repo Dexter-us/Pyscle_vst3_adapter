@@ -14,6 +14,76 @@
 // 2. Explicit modern JUCE audio processor module inclusion
 #include <juce_audio_processors/juce_audio_processors.h>
 
+// Add these implementations after the include statements and before prepareToPlay()
+
+PluginProcessor::PluginProcessor()
+    : juce::AudioProcessor (BusesProperties()
+        .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+        .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
+{
+}
+
+PluginProcessor::~PluginProcessor()
+{
+}
+
+// ==============================================================================
+// BUS LAYOUT
+// ==============================================================================
+
+bool PluginProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+{
+    return layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
+}
+
+// ==============================================================================
+// EDITOR
+// ==============================================================================
+
+juce::AudioProcessorEditor* PluginProcessor::createEditor()
+{
+    return new PluginEditor (*this);
+}
+
+bool PluginProcessor::hasEditor() const { return true; }
+
+// ==============================================================================
+// INFO
+// ==============================================================================
+
+const juce::String PluginProcessor::getName() const
+{
+    return JucePlugin_Name;
+}
+
+bool PluginProcessor::acceptsMidi() const   { return true; }
+bool PluginProcessor::producesMidi() const  { return true; }
+bool PluginProcessor::isMidiEffect() const  { return false; }
+double PluginProcessor::getTailLengthSeconds() const { return 0.0; }
+
+// ==============================================================================
+// PROGRAMS
+// ==============================================================================
+
+int PluginProcessor::getNumPrograms()                                        { return 1; }
+int PluginProcessor::getCurrentProgram()                                     { return 0; }
+void PluginProcessor::setCurrentProgram (int index)                          { juce::ignoreUnused (index); }
+const juce::String PluginProcessor::getProgramName (int index)               { juce::ignoreUnused (index); return {}; }
+void PluginProcessor::changeProgramName (int index, const juce::String& newName) { juce::ignoreUnused (index, newName); }
+
+// ==============================================================================
+// STATE
+// ==============================================================================
+
+void PluginProcessor::getStateInformation (juce::MemoryBlock& destData)
+{
+    juce::ignoreUnused (destData);
+}
+
+void PluginProcessor::setStateInformation (const void* data, int sizeInBytes)
+{
+    juce::ignoreUnused (data, sizeInBytes);
+
 // --- Psycle 64-bit Loader Configuration ---
 typedef void (*PsycleProcessFunc)(float* leftChannel, float* rightChannel, int sampleCount);
 PsycleProcessFunc remotePsycleProcess = nullptr;
