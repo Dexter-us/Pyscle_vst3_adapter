@@ -25,7 +25,7 @@ set(PROJECT_NAME "Pamplejuce")
 #   set(PROJECT_NAME "MyPlugin_v${MAJOR_VERSION}")
 # Doing so enables major versions to show up in IDEs and DAWs as separate plugins
 # allowing you to change parameters and behavior without breaking existing user projects
-set(PRODUCT_NAME "Pamplejuce Demo")
+set(PRODUCT_NAME "Pyscle adapter")
 
 # Change me! Used for the MacOS bundle name and Installers
 set(COMPANY_NAME "Pamplejuce Company")
@@ -35,7 +35,7 @@ set(BUNDLE_ID "com.pamplejuce.pamplejuce")
 
 # Change me! Set the plugin formats you want built
 # Valid choices: AAX Unity VST VST3 AU AUv3 Standalone
-set(FORMATS Standalone AU VST3 AUv3)
+set(FORMATS Standalone Unity AU VST3 AUv3)
 
 # Force JUCE to work with sccache
 # instruct MSVC to embed debug info (/Z7) instead of emitting a .pdb
@@ -72,7 +72,7 @@ juce_add_plugin("${PROJECT_NAME}"
     ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/packaging/icon.png"
 
     # Change me!
-    COMPANY_NAME "${COMPANY_NAME}"
+    COMPANY_NAME "${Dexter_US}"
     BUNDLE_ID "${BUNDLE_ID}"
 
     # On MacOS, plugin is copied to /Users/yourname/Library/Audio/Plug-Ins/
@@ -93,7 +93,7 @@ juce_add_plugin("${PROJECT_NAME}"
     # This is how it's listed in the DAW
     # This can be different from PROJECT_NAME and can have spaces!
     # You might want to use v${MAJOR_VERSION} here once you go to v2...
-    PRODUCT_NAME "${PRODUCT_NAME}")
+    PRODUCT_NAME "${Dexter U.S. Pyscle adapter")
 
 # This lets us use our code in both the JUCE targets and our Test target
 # Without running into ODR violations
