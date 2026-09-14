@@ -1,5 +1,18 @@
+//#include "PluginProcessor.h"
+//#include "PluginEditor.h"
+#pragma once
 #include "PluginProcessor.h"
-#include "PluginEditor.h"
+
+// Forward declaration or full class definition
+class PluginEditor : public juce::AudioProcessorEditor
+{
+public:
+    PluginEditor (PluginProcessor& p);
+    ~PluginEditor();
+    
+    // ... rest of class definition
+
+
 
 private:
     PluginProcessor& audioProcessor;
