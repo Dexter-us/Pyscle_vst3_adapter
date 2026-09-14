@@ -43,8 +43,9 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.11
 
       - name: Configure Project with CMake
-        run: |
-          cmake -B ${{ env.BUILD_DIR }} \
+        run: |  
+
+            cmake -B -G Ninja -DCMAKE_BUILD_TYPE=Release ${{ env.BUILD_DIR }} \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
             -DCMAKE_C_COMPILER_LAUNCHER=sccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
