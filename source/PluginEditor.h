@@ -1,37 +1,59 @@
 #pragma once
 
-#include <juce_gui_processors/juce_gui_processors.h>
-#include "PluginProcessor.h"
+#include <juce_audio_processors/juce_audio_processors.h>
+
+#if (MSVC)
+#include "ipps.h"
+#endif
 
 // ==============================================================================
-/** Dexter U.S. Psycle Effect Loader Interface Header
+/** Dexter U.S. Psycle Effect Loader Backend Core Header
 */
-class PluginEditor  : public juce::AudioProcessorEditor,
-                      public juce::Button::Listener
+class PluginProcessor : public juce::AudioProcessor
 {
 public:
-    PluginEditor (PluginProcessor&);
-    ~PluginEditor() override;
+    PluginProcessor();
+    ~PluginProcessor() override;
 
     // ==============================================================================
     // JUCE Lifecycle Methods
-    void paint (juce::Graphics&) override;
-    void resized() override;
-    
-    // Callback interface for user UI clicks
-    void buttonClicked (juce::Button* button) override;
+    void prepareToPlay (double sampleRate, int samplesPerBlock) override;
+    void releaseResources() override;
+
+    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
+
+    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+
+    // ==============================================================================
+    // User Interface & Info Hooks
+    juce::AudioProcessorEditor* createEditor() override;
+    bool hasEditor() const override;
+
+    const juce::String getName() const override;
+
+    bool acceptsMidi() const override;
+    bool producesMidi() const override;
+    bool isMidiEffect() const override;
+    double getTailLengthSeconds() const override;
+
+    // ==============================================================================
+    // Program Management Configuration
+    int getNumPrograms() override;
+    int getCurrentProgram() override;
+    void setCurrentProgram (int index) override;
+    const juce::String getProgramName (int index) override;
+    void changeProgramName (int index, const juce::String& newName) override;
+
+    // ==============================================================================
+    // State Persistence (DAW Session Saving/Loading)
+    void getStateInformation (juce::MemoryBlock& destData) override;
+    void setStateInformation (const void* data, int sizeInBytes) override;
+
+    // ==============================================================================
+    // --- Dynamic Psycle DLL Loader API Hooks ---
+    void loadPsycleDll (const juce::File& dllFile);
+    juce::File currentDllPath;
 
 private:
-    // Reference to the backend audio processing framework
-    PluginProcessor& audioProcessor;
-
-    // UI Interactive Layout Components
-    juce::TextButton loadButton   { "Load Psycle Effect (.dll)" };
-    juce::Label statusLabel       { "status", "No plugin loaded." };
-    juce::TextButton openUiButton  { "Open Native Editor" };
-
-    // Managed file pointer container to securely open native OS browser boxes
-    std::unique_ptr<juce::FileChooser> fileChooser;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };
