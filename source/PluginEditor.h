@@ -1,7 +1,8 @@
 #pragma once
 #include "PluginProcessor.h"
 
-class PluginEditor : public juce::AudioProcessorEditor
+class PluginEditor : public juce::AudioProcessorEditor,
+                     public juce::Button::Listener
 {
 public:
     PluginEditor (PluginProcessor& p);
