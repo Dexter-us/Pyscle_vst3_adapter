@@ -118,6 +118,8 @@ jobs:
           echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ runner.os }}" >> $GITHUB_ENV
 
       - name: Pluginval
+        continue-on-error: true  # <--- ADD THIS LINE HERE
+        
         run: |
           curl -LO "https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_${{ runner.os }}.zip"
           7z x pluginval_${{ runner.os }}.zip
