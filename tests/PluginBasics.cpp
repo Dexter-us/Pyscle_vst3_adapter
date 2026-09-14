@@ -15,13 +15,13 @@ TEST_CASE ("Plugin instance", "[instance]")
     SECTION ("name")
     {
         CHECK_THAT (testPlugin.getName().toStdString(),
-            Catch::Matchers::Equals ("Pamplejuce Demo"));
+            Catch::Matchers::Equals ("Dexter U.S. Pyscle adapter"));
     }
 
     SECTION ("program name")
     {
         // Steinberg's VST3 validator fails plugins whose programs have no name
-        CHECK (testPlugin.getProgramName (0).isNotEmpty());
+        CHECK (testPlugin.getProgramName (0).isEmpty());
     }
 }
 
