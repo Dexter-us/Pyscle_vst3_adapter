@@ -6,6 +6,11 @@
 #include "ipps.h"
 #endif
 
+public:
+    void loadPsycleDll(const juce::File& dllFile);
+    juce::File currentDllPath;
+
+
 class PluginProcessor : public juce::AudioProcessor
 {
 public:
