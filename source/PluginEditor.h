@@ -1,5 +1,6 @@
 #pragma once
 #include "PluginProcessor.h"
+#include <melatonin/inspector.h>  // Add this include
 
 class PluginEditor : public juce::AudioProcessorEditor,
                      public juce::Button::Listener
