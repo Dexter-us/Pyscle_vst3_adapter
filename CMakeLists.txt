@@ -5,6 +5,15 @@ cmake_minimum_required(VERSION 3.25)
 # This tells cmake we have goodies in the /cmake folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include (PamplejuceVersion)
+
+# Add this snippet near the top or middle of your root CMakeLists.txt
+if (MSVC OR CMAKE_CXX_SIMULATE_ID MATCHES "MSVC")
+    # For clang-cl.exe compiling under a Windows architecture simulator 
+    add_compile_options(/wd4056 -clang:-Wno-error=nan-infinity-disabled -clang:-Wno-nan-infinity-disabled)
+else()
+    # For standard Unix/Mac style Clang runners
+    add_compile_options(-Wno-error=nan-infinity-disabled -Wno-nan-infinity-disabled)
+endif()
 #
 # Modern concise way to add dependencies to your project
 include (CPM)
