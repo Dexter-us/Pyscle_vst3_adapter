@@ -6,17 +6,11 @@
 #include "ipps.h"
 #endif
 
-//public:
-    
-
 class PluginProcessor : public juce::AudioProcessor
 {
 public:
     PluginProcessor();
     ~PluginProcessor() override;
-    void loadPsycleDll(const juce::File& dllFile);
-    juce::File currentDllPath;
-
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
@@ -43,6 +37,9 @@ public:
 
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+
+    void loadPsycleDll(const juce::File& dllFile);
+    juce::File currentDllPath;
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
