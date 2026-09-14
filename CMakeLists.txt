@@ -94,7 +94,7 @@ juce_add_plugin("${PROJECT_NAME}"
     # This can be different from PROJECT_NAME and can have spaces!
     # You might want to use v${MAJOR_VERSION} here once you go to v2...
     
-    PRODUCT_NAME "${Dexter U.S. Pyscle adapter}"
+    PRODUCT_NAME "Dexter U.S. Pyscle adapter"
 )
 
 # This lets us use our code in both the JUCE targets and our Test target
