@@ -1,9 +1,19 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-#include <windows.h> // Targets Windows DAWs
+// 1. Cleanly inject Windows API functions without disrupting CMake macros
+#ifndef NOMINMAX
+  #define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+  #define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <string>
 
-#include <JuceHeader.h> 
+// 2. Explicitly pull in the JUCE Audio Processor module instead of JuceHeader.h
+#include <juce_audio_processors/juce_audio_processors.h>
+
 
 // Define the exact audio processing signature expected by the Psycle machine
 typedef void (*PsycleProcessFunc)(float* leftChannel, float* rightChannel, int sampleCount);
