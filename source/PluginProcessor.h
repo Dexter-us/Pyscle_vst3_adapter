@@ -4,7 +4,7 @@
 
 #if (MSVC)
 #include "ipps.h"
-#endif
+#endif 
 
 class PluginProcessor : public juce::AudioProcessor
 {
