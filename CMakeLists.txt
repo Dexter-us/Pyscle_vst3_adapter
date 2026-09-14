@@ -1,20 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
 
-
-
 # This tells cmake we have goodies in the /cmake folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include (PamplejuceVersion)
 
-# Add this snippet near the top or middle of your root CMakeLists.txt
-if (MSVC OR CMAKE_CXX_SIMULATE_ID MATCHES "MSVC")
-    # For clang-cl.exe compiling under a Windows architecture simulator 
-    add_compile_options(/wd4056 -clang:-Wno-error=nan-infinity-disabled -clang:-Wno-nan-infinity-disabled)
-else()
-    # For standard Unix/Mac style Clang runners
-    add_compile_options(-Wno-error=nan-infinity-disabled -Wno-nan-infinity-disabled)
-endif()
-#
 # Modern concise way to add dependencies to your project
 include (CPM)
 
@@ -102,7 +91,7 @@ juce_add_plugin("${PROJECT_NAME}"
     # This can be different from PROJECT_NAME and can have spaces!
     # You might want to use v${MAJOR_VERSION} here once you go to v2...
     
-    PRODUCT_NAME "Dexter U.S. Pyscle adapter"
+    PRODUCT_NAME "Dexter U.S. Psycle adapter"
 )
 
 # This lets us use our code in both the JUCE targets and our Test target
@@ -153,7 +142,7 @@ target_compile_definitions(SharedCode
 
 # Link to any other modules you added (with juce_add_module) here!
 # Usually JUCE modules must have PRIVATE visibility
-# See https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#juce_add_module
+# See https://github.com
 # However, with Pamplejuce, you'll link modules to SharedCode with INTERFACE visibility
 # This allows the JUCE plugin targets and the Tests target to link against it
 target_link_libraries(SharedCode
@@ -183,7 +172,9 @@ pamplejuce_add_benchmarks()
 # Output some config for CI (like our PRODUCT_NAME)
 include(GitHubENV)
 
-# Suppress the Clang fast-math infinity warning treated as an error
+# --- CORRECTED WARNING SUPPRESSION STEP ---
+# Inject flags directly into targets defined above to override Pamplejuce/JUCE strict settings
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wno-error=nan-infinity-disabled -Wno-nan-infinity-disabled)
+    target_compile_options(SharedCode INTERFACE -Wno-error=nan-infinity-disabled -Wno-nan-infinity-disabled)
+    target_compile_options("${PROJECT_NAME}" PRIVATE -Wno-error=nan-infinity-disabled -Wno-nan-infinity-disabled)
 endif()
