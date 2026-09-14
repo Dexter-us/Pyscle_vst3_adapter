@@ -83,7 +83,7 @@ void PluginProcessor::getStateInformation (juce::MemoryBlock& destData)
 void PluginProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     juce::ignoreUnused (data, sizeInBytes);
-
+}
 // --- Psycle 64-bit Loader Configuration ---
 typedef void (*PsycleProcessFunc)(float* leftChannel, float* rightChannel, int sampleCount);
 PsycleProcessFunc remotePsycleProcess = nullptr;
