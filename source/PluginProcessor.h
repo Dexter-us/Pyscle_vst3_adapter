@@ -38,7 +38,7 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    // --- Dynamic Psycle DLL Loader Additions ---
+    // --- Keep these PUBLIC so PluginEditor.cpp can access them ---
     void loadPsycleDll(const juce::File& dllFile);
     juce::File currentDllPath;
 
