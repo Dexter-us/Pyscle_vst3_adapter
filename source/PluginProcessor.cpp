@@ -1,5 +1,3 @@
-
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -13,16 +11,19 @@
 #include <windows.h>
 #include <string>
 
-// 2. DO NOT use <JuceHeader.h>. Use the explicit modern module path:
+// 2. Explicit modern JUCE audio processor module inclusion
 #include <juce_audio_processors/juce_audio_processors.h>
 
-
-// Define the exact audio processing signature expected by the Psycle machine
+// --- Psycle 64-bit Loader Configuration ---
 typedef void (*PsycleProcessFunc)(float* leftChannel, float* rightChannel, int sampleCount);
 PsycleProcessFunc remotePsycleProcess = nullptr;
 HINSTANCE psycleModule = nullptr;
 
-void PsycleLoaderAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+// ==============================================================================
+// FIX: Changed from PsycleLoaderAudioProcessor:: to PluginProcessor::
+// ==============================================================================
+
+void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     // Locates the directory where your VST3 plugin is installed inside your DAW
     juce::File pluginDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile).getParentDirectory();
@@ -38,7 +39,7 @@ void PsycleLoaderAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
     }
 }
 
-void PsycleLoaderAudioProcessor::releaseResources()
+void PluginProcessor::releaseResources()
 {
     // Clean up memory and unload the Psycle plugin when the VST3 is removed from a track
     if (psycleModule != nullptr) {
@@ -48,10 +49,16 @@ void PsycleLoaderAudioProcessor::releaseResources()
     }
 }
 
-void PsycleLoaderAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
     
+    // Clear extra channels to avoid random noise bursts
+    auto totalNumInputChannels  = getTotalNumInputChannels();
+    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+        buffer.clear (i, 0, buffer.getNumSamples());
+
     // Get direct 64-bit audio stream pointers from your DAW
     float* leftChannel = buffer.getWritePointer(0);
     float* rightChannel = buffer.getWritePointer(1);
