@@ -59,7 +59,7 @@ jobs:
           cp -r ${{ env.BUILD_DIR }}/*_artefacts/Release/VST3/ final_output/ || true
 
       - name: Upload Compiled VST3 Adapter Bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Psycle-VST3-Adapter-Windows
           path: final_output/
