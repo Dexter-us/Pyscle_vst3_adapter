@@ -22,14 +22,6 @@ PluginEditor::PluginEditor (PluginProcessor& p)
     openUiButton.setEnabled (false);
     addAndMakeVisible (openUiButton);
 
-    inspectButton.setButtonText ("Inspect");
-    inspectButton.onClick = [this] {
-        if (!inspector)
-            inspector = std::make_unique<melatonin::Inspector> (*this);
-        inspector->onClose = [this]() { inspector.reset(); };
-    };
-    addAndMakeVisible (inspectButton);
-
     if (audioProcessor.currentDllPath.existsAsFile())
     {
         statusLabel.setText ("Loaded: " + audioProcessor.currentDllPath.getFileName(), juce::dontSendNotification);
