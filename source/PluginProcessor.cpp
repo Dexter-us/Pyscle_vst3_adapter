@@ -1,3 +1,5 @@
+
+
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -11,7 +13,7 @@
 #include <windows.h>
 #include <string>
 
-// 2. Explicitly pull in the JUCE Audio Processor module instead of JuceHeader.h
+// 2. DO NOT use <JuceHeader.h>. Use the explicit modern module path:
 #include <juce_audio_processors/juce_audio_processors.h>
 
 
