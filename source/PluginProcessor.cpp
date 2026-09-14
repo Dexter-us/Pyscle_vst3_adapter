@@ -14,7 +14,14 @@
 // 2. Explicit modern JUCE audio processor module inclusion
 #include <juce_audio_processors/juce_audio_processors.h>
 
-// Add these implementations after the include statements and before prepareToPlay()
+// --- Dynamic Psycle 64-bit Loader Function Signatures ---
+typedef void (*PsycleProcessFunc)(float* leftChannel, float* rightChannel, int sampleCount);
+PsycleProcessFunc remotePsycleProcess = nullptr;
+HINSTANCE psycleModule = nullptr;
+
+// ==============================================================================
+// CONSTRUCTOR / DESTRUCTOR
+// ==============================================================================
 
 PluginProcessor::PluginProcessor()
     : juce::AudioProcessor (BusesProperties()
@@ -25,6 +32,90 @@ PluginProcessor::PluginProcessor()
 
 PluginProcessor::~PluginProcessor()
 {
+    // Clean up memory when the plugin instance is destroyed
+    if (psycleModule != nullptr) {
+        FreeLibrary(psycleModule);
+        psycleModule = nullptr;
+        remotePsycleProcess = nullptr;
+    }
+}
+
+// ==============================================================================
+// DYNAMIC DLL LOADING METHOD
+// ==============================================================================
+
+void PluginProcessor::loadPsycleDll(const juce::File& dllFile)
+{
+    // 1. Thread-safe: Stop audio processing briefly while we hot-swap the DLL
+    suspendProcessing(true);
+
+    // 2. Safely unload any currently active engine first to prevent memory leaks
+    if (psycleModule != nullptr) {
+        FreeLibrary(psycleModule);
+        psycleModule = nullptr;
+        remotePsycleProcess = nullptr;
+    }
+
+    // 3. Open the new target path passed from the UI
+    if (dllFile.existsAsFile()) {
+        currentDllPath = dllFile;
+        psycleModule = LoadLibraryA(dllFile.getFullPathName().toRawUTF8());
+        
+        if (psycleModule != nullptr) {
+            // Point directly to the audio rendering function inside the selected Psycle DLL
+            remotePsycleProcess = (PsycleProcessFunc)GetProcAddress(psycleModule, "ProcessAudio");
+        }
+    }
+
+    // 4. Resume audio processing
+    suspendProcessing(false);
+}
+
+// ==============================================================================
+// AUDIO CORE IMPLEMENTATIONS
+// ==============================================================================
+
+void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+{
+    juce::ignoreUnused (sampleRate, samplesPerBlock);
+
+    // If a DLL was previously chosen, attempt to reload it upon activation
+    if (currentDllPath.existsAsFile()) {
+        loadPsycleDll(currentDllPath);
+    }
+}
+
+void PluginProcessor::releaseResources()
+{
+    // Keeping resources allocated during state transitions to prevent DAWs from clicking,
+    // final cleanup is fully handled inside the destructor (~PluginProcessor).
+}
+
+void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+{
+    juce::ignoreUnused (midiMessages);
+    juce::ScopedNoDenormals noDenormals;
+    
+    auto totalNumInputChannels  = getTotalNumInputChannels();
+    auto totalNumOutputChannels = getTotalNumOutputChannels();
+
+    // Clear extra channels to avoid random digital noise bursts
+    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+        buffer.clear (i, 0, buffer.getNumSamples());
+
+    // Fallback if there are no channels available to prevent crashing
+    if (totalNumInputChannels == 0 || buffer.getNumSamples() == 0)
+        return;
+
+    // Get direct audio stream pointers from your DAW
+    float* leftChannel = buffer.getWritePointer(0);
+    float* rightChannel = totalNumInputChannels > 1 ? buffer.getWritePointer(1) : leftChannel;
+    int numSamples = buffer.getNumSamples();
+
+    // If the Psycle function pointer is valid, route the audio block straight through it
+    if (remotePsycleProcess != nullptr) {
+        remotePsycleProcess(leftChannel, rightChannel, numSamples);
+    }
 }
 
 // ==============================================================================
@@ -56,8 +147,8 @@ const juce::String PluginProcessor::getName() const
     return JucePlugin_Name;
 }
 
-bool PluginProcessor::acceptsMidi() const   { return true; }
-bool PluginProcessor::producesMidi() const  { return true; }
+bool PluginProcessor::acceptsMidi() const   { return false; } // Changed to false: Pure effect loader
+bool PluginProcessor::producesMidi() const  { return false; } // Changed to false: Pure effect loader
 bool PluginProcessor::isMidiEffect() const  { return false; }
 double PluginProcessor::getTailLengthSeconds() const { return 0.0; }
 
@@ -72,75 +163,25 @@ const juce::String PluginProcessor::getProgramName (int index)               { j
 void PluginProcessor::changeProgramName (int index, const juce::String& newName) { juce::ignoreUnused (index, newName); }
 
 // ==============================================================================
-// STATE
+// STATE (Saves/Restores plugin setup in DAW projects)
 // ==============================================================================
 
 void PluginProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    juce::ignoreUnused (destData);
+    // Save the last loaded path as a string so your DAW session remembers it
+    destData.append (currentDllPath.getFullPathName().toRawUTF8(), 
+                     currentDllPath.getFullPathName().getNumBytesAsUTF8());
 }
 
 void PluginProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    juce::ignoreUnused (data, sizeInBytes);
-}
-// --- Psycle 64-bit Loader Configuration ---
-typedef void (*PsycleProcessFunc)(float* leftChannel, float* rightChannel, int sampleCount);
-PsycleProcessFunc remotePsycleProcess = nullptr;
-HINSTANCE psycleModule = nullptr;
-
-// ==============================================================================
-// Audio Processor Core Implementations
-// ==============================================================================
-
-void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
-{
-    // Locates the directory where your VST3 plugin is installed inside your DAW
-    juce::File pluginDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile).getParentDirectory();
-    juce::File psycleDll = pluginDir.getChildFile("native_psycle_plugin.dll");
-
-    // Dynamically open the 64-bit pre-compiled binary
-    if (psycleDll.existsAsFile()) {
-        psycleModule = LoadLibraryA(psycleDll.getFullPathName().toRawUTF8());
-        if (psycleModule != nullptr) {
-            // Point directly to the audio rendering function inside the Psycle DLL
-            remotePsycleProcess = (PsycleProcessFunc)GetProcAddress(psycleModule, "ProcessAudio");
+    if (sizeInBytes > 0)
+    {
+        juce::String restoredPath = juce::String::createStringFromData (data, sizeInBytes);
+        juce::File targetFile (restoredPath);
+        if (targetFile.existsAsFile()) {
+            loadPsycleDll (targetFile);
         }
-    }
-}
-
-void PluginProcessor::releaseResources()
-{
-    // Clean up memory and unload the Psycle plugin when the VST3 is removed from a track
-    if (psycleModule != nullptr) {
-        FreeLibrary(psycleModule);
-        psycleModule = nullptr;
-        remotePsycleProcess = nullptr;
-    }
-}
-
-void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
-{
-    juce::ScopedNoDenormals noDenormals;
-    
-    // Clear extra channels to avoid random noise bursts
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-
-    // Fallback if there are no channels available to prevent crashing
-    if (totalNumInputChannels == 0 || buffer.getNumSamples() == 0)
-        return;
-
-    // Get direct 64-bit audio stream pointers from your DAW
-    float* leftChannel = buffer.getWritePointer(0);
-    float* rightChannel = totalNumInputChannels > 1 ? buffer.getWritePointer(1) : leftChannel;
-    int numSamples = buffer.getNumSamples();
-
-    // If the 64-bit Psycle file is found and hooked, stream the audio through it
-    if (remotePsycleProcess != nullptr) {
-        remotePsycleProcess(leftChannel, rightChannel, numSamples);
     }
 }
 
