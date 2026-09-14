@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wno-error=nan-infinity-disabled -Wno-nan-infinity-disabled)
+endif()
+
 # This tells cmake we have goodies in the /cmake folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include (PamplejuceVersion)
