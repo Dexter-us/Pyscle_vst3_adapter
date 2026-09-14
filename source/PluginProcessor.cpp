@@ -20,7 +20,7 @@ PsycleProcessFunc remotePsycleProcess = nullptr;
 HINSTANCE psycleModule = nullptr;
 
 // ==============================================================================
-// FIX: Changed from PsycleLoaderAudioProcessor:: to PluginProcessor::
+// Audio Processor Core Implementations
 // ==============================================================================
 
 void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
@@ -59,13 +59,25 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
+    // Fallback if there are no channels available to prevent crashing
+    if (totalNumInputChannels == 0 || buffer.getNumSamples() == 0)
+        return;
+
     // Get direct 64-bit audio stream pointers from your DAW
     float* leftChannel = buffer.getWritePointer(0);
-    float* rightChannel = buffer.getWritePointer(1);
+    float* rightChannel = totalNumInputChannels > 1 ? buffer.getWritePointer(1) : leftChannel;
     int numSamples = buffer.getNumSamples();
 
     // If the 64-bit Psycle file is found and hooked, stream the audio through it
     if (remotePsycleProcess != nullptr) {
         remotePsycleProcess(leftChannel, rightChannel, numSamples);
     }
+}
+
+// ==============================================================================
+// MANDATORY ENTRY POINT HOOK: Fixes undefined symbol link errors
+// ==============================================================================
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
+{
+    return new PluginProcessor();
 }
