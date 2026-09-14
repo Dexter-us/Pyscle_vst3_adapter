@@ -1,5 +1,5 @@
 name: Pamplejuce-Windows-Build
-
+-DCMAKE_CXX_FLAGS="-Wno-error=nan-infinity-disabled"
 on:
   workflow_dispatch:
   push:
