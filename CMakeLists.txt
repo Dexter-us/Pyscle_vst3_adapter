@@ -174,3 +174,16 @@ pamplejuce_add_benchmarks()
 
 # Output some config for CI (like our PRODUCT_NAME)
 include(GitHubENV)
+
+# ==============================================================================
+# --- FORCE CLANG-CL TO IGNORE THE INFINITY WARNINGS ---
+# This must sit at the absolute bottom to override pamplejuce_shared_code_defaults()
+# ==============================================================================
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Targets the local source codes
+    target_compile_options(SharedCode INTERFACE "-clang:-Wno-error=nan-infinity-disabled" "-clang:-Wno-nan-infinity-disabled")
+    
+    # Targets the final wrapper plugin binaries
+    target_compile_options("${PROJECT_NAME}" PRIVATE "-clang:-Wno-error=nan-infinity-disabled" "-clang:-Wno-nan-infinity-disabled")
+endif()
+
