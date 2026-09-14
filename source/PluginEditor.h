@@ -1,6 +1,5 @@
 #pragma once
 #include "PluginProcessor.h"
-#include <melatonin/inspector.h>  // Add this include
 
 class PluginEditor : public juce::AudioProcessorEditor,
                      public juce::Button::Listener
@@ -19,8 +18,6 @@ private:
     juce::TextButton loadButton;
     juce::Label statusLabel;
     juce::TextButton openUiButton;
-    juce::TextButton inspectButton;
     
     std::unique_ptr<juce::FileChooser> fileChooser;
-    std::unique_ptr<melatonin::Inspector> inspector;
 };
