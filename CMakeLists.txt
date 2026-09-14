@@ -15,16 +15,9 @@ include(JUCEDefaults)
 
 # Change me!
 # This is the internal name of the project and the name of JUCE's shared code target
-# Note: This cannot have spaces (it may be 2024, but you can't have it all!)
-# Worry not, JUCE's PRODUCT_NAME can have spaces (and is what DAWs display)
 set(PROJECT_NAME "Pamplejuce")
 
 # Worry not, JUCE's PRODUCT_NAME can have spaces (and is what DAWs will display)
-# You can also just have it be the same thing as PROJECT_NAME
-# You may want to append the major version on the end of this (and PROJECT_NAME) ala:
-#   set(PROJECT_NAME "MyPlugin_v${MAJOR_VERSION}")
-# Doing so enables major versions to show up in IDEs and DAWs as separate plugins
-# allowing you to change parameters and behavior without breaking existing user projects
 set(PRODUCT_NAME "Pyscle adapter")
 
 # Change me! Used for the MacOS bundle name and Installers
@@ -34,11 +27,9 @@ set(COMPANY_NAME "Pamplejuce Company")
 set(BUNDLE_ID "com.pamplejuce.pamplejuce")
 
 # Change me! Set the plugin formats you want built
-# Valid choices: AAX Unity VST VST3 AU AUv3 Standalone
 set(FORMATS Standalone Unity AU VST3 AUv3)
 
 # Force JUCE to work with sccache
-# instruct MSVC to embed debug info (/Z7) instead of emitting a .pdb
 set(CMAKE_POLICY_DEFAULT_CMP0141        NEW      CACHE STRING "" FORCE)
 set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT Embedded CACHE STRING "" FORCE)
 
@@ -46,16 +37,20 @@ set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT Embedded CACHE STRING "" FORCE)
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
 
 # ==============================================================================
-# --- GLOBAL WARNING SUPPRESSION STEP ---
-# Force clang-cl globally across ALL subdirectories to ignore fast-math infinity blocks
+# --- FORCE REPLACEMENT OF FAST MATH OPTIMIZATION FLOATS ---
+# Strips the /fp:fast and fast-math optimization flags that clash with JUCE frameworks
 # ==============================================================================
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Tell CMake globally to drop fast-math warning halts across all targets
+    add_compile_options(-Wno-error=nan-infinity-disabled -Wno-nan-infinity-disabled)
+    
+    # Overwrite environment strings to force strict floating precision
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=nan-infinity-disabled -Wno-nan-infinity-disabled")
+    
+    # Force override of the MSVC wrapper floating point type if present
     if (MSVC OR CMAKE_CXX_SIMULATE_ID MATCHES "MSVC")
-        # Direct instruction for clang-cl parsing on the Windows runner architecture
+        string(REPLACE "/fp:fast" "/fp:precise" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
         add_compile_options(-clang:-Wno-error=nan-infinity-disabled -clang:-Wno-nan-infinity-disabled)
-    else()
-        # Fallback parameters for default standard Clang tools
-        add_compile_options(-Wno-error=nan-infinity-disabled -Wno-nan-infinity-disabled)
     endif()
 endif()
 # ==============================================================================
@@ -67,50 +62,24 @@ include(PamplejuceLog)
 include(PamplejuceFunctions)
 
 # JUCE is setup as a submodule in the /JUCE folder
-# Locally, you must run `git submodule update --init --recursive` once
-# and later `git submodule update --remote --merge` to keep it up to date
-# On Github Actions, this is done as a part of actions/checkout
 add_subdirectory(JUCE)
 
 # Add CLAP format
 add_subdirectory(modules/clap-juce-extensions EXCLUDE_FROM_ALL)
 
-# Add any other modules you want modules here, before the juce_add_plugin call
-# juce_add_module(modules/my_module)
-
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_plugin("${PROJECT_NAME}"
-    # Icons for the standalone app
     ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/packaging/icon.png"
-
-    # Change me!
     COMPANY_NAME "Dexter_US"
     BUNDLE_ID "${BUNDLE_ID}"
-
-    # On MacOS, plugin is copied to /Users/yourname/Library/Audio/Plug-Ins/
     COPY_PLUGIN_AFTER_BUILD TRUE
-
-    # Change me!
-    # A four-character plugin id
-    # First character MUST be uppercase for AU formats
     PLUGIN_MANUFACTURER_CODE Pamp
-
-    # Change me!
-    # A unique four-character plugin id
-    # Note: this must have at least one upper-case character
     PLUGIN_CODE P001
     FORMATS "${FORMATS}"
-
-    # The name of your final executable
-    # This is how it's listed in the DAW
-    # This can be different from PROJECT_NAME and can have spaces!
-    # You might want to use v${MAJOR_VERSION} here once you go to v2...
-    
-    PRODUCT_NAME "Dexter U.S. Pyscle adapter"
+    PRODUCT_NAME "Dexter U.S. Psycle adapter"
 )
 
 # This lets us use our code in both the JUCE targets and our Test target
-# Without running into ODR violations
 add_library(SharedCode INTERFACE)
 
 clap_juce_extensions_plugin(TARGET "${PROJECT_NAME}"
@@ -119,6 +88,17 @@ clap_juce_extensions_plugin(TARGET "${PROJECT_NAME}"
 
 # Enable fast math, C++23 and a few other target defaults
 pamplejuce_shared_code_defaults()
+
+# Override fast math specifically for our targets right after Pamplejuce appends them
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    if (MSVC OR CMAKE_CXX_SIMULATE_ID MATCHES "MSVC")
+        target_compile_options(SharedCode INTERFACE "-clang:-Wno-error=nan-infinity-disabled" "-clang:-Wno-nan-infinity-disabled")
+        target_compile_options("${PROJECT_NAME}" PRIVATE "-clang:-Wno-error=nan-infinity-disabled" "-clang:-Wno-nan-infinity-disabled")
+    else()
+        target_compile_options(SharedCode INTERFACE "-Wno-error=nan-infinity-disabled" "-Wno-nan-infinity-disabled")
+        target_compile_options("${PROJECT_NAME}" PRIVATE "-Wno-error=nan-infinity-disabled" "-Wno-nan-infinity-disabled")
+    endif()
+endif()
 
 # Manually list all .h and .cpp files for the plugin
 file(GLOB_RECURSE SourceFiles CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/source/*.h")
@@ -133,21 +113,14 @@ pamplejuce_xcode_prettify()
 # This is where you can set preprocessor definitions for JUCE and your plugin
 target_compile_definitions(SharedCode
     INTERFACE
-
-    # JUCE_WEB_BROWSER and JUCE_USE_CURL off by default
-    JUCE_WEB_BROWSER=0  # If you set this to 1, add `NEEDS_WEB_BROWSER TRUE` to the `juce_add_plugin` call
-    JUCE_USE_CURL=0     # If you set this to 1, add `NEEDS_CURL TRUE` to the `juce_add_plugin` call
+    JUCE_WEB_BROWSER=0  
+    JUCE_USE_CURL=0     
     JUCE_VST3_CAN_REPLACE_VST2=0
-
-    # lets the app known if we're Debug or Release
     CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
     VERSION="${CURRENT_VERSION}"
-
-    # JucePlugin_Name is for some reason doesn't use the nicer PRODUCT_NAME
     PRODUCT_NAME_WITHOUT_VERSION="Pamplejuce"
 )
 
-# Link to any other modules you added (with juce_add_module) here!
 target_link_libraries(SharedCode
     INTERFACE
     Assets
@@ -174,16 +147,3 @@ pamplejuce_add_benchmarks()
 
 # Output some config for CI (like our PRODUCT_NAME)
 include(GitHubENV)
-
-# ==============================================================================
-# --- FORCE CLANG-CL TO IGNORE THE INFINITY WARNINGS ---
-# This must sit at the absolute bottom to override pamplejuce_shared_code_defaults()
-# ==============================================================================
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    # Targets the local source codes
-    target_compile_options(SharedCode INTERFACE "-clang:-Wno-error=nan-infinity-disabled" "-clang:-Wno-nan-infinity-disabled")
-    
-    # Targets the final wrapper plugin binaries
-    target_compile_options("${PROJECT_NAME}" PRIVATE "-clang:-Wno-error=nan-infinity-disabled" "-clang:-Wno-nan-infinity-disabled")
-endif()
-
