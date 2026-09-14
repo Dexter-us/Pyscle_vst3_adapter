@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wno-error=nan-infinity-disabled -Wno-nan-infinity-disabled)
-endif()
+
 
 # This tells cmake we have goodies in the /cmake folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -175,3 +173,8 @@ pamplejuce_add_benchmarks()
 
 # Output some config for CI (like our PRODUCT_NAME)
 include(GitHubENV)
+
+# Suppress the Clang fast-math infinity warning treated as an error
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wno-error=nan-infinity-disabled -Wno-nan-infinity-disabled)
+endif()
