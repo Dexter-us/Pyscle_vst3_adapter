@@ -1,6 +1,17 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+private:
+    PluginProcessor& audioProcessor;
+    
+    juce::TextButton loadButton;
+    juce::Label statusLabel;
+    juce::TextButton openUiButton;
+    
+    // Add this line inside your private properties to manage memory safely:
+    std::unique_ptr<juce::FileChooser> fileChooser; 
+
+
 PluginEditor::PluginEditor (PluginProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
