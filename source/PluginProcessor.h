@@ -6,16 +6,17 @@
 #include "ipps.h"
 #endif
 
-public:
-    void loadPsycleDll(const juce::File& dllFile);
-    juce::File currentDllPath;
-
+//public:
+    
 
 class PluginProcessor : public juce::AudioProcessor
 {
 public:
     PluginProcessor();
     ~PluginProcessor() override;
+    void loadPsycleDll(const juce::File& dllFile);
+    juce::File currentDllPath;
+
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
