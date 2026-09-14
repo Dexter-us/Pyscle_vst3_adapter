@@ -43,6 +43,10 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.11
 
       - name: Configure Project with CMake
+       # --- INJECT THIS ENVIRONMENT OVRERIDE BLOCK ---
+        env:
+          CXXFLAGS: "-clang:-Wno-error=nan-infinity-disabled -clang:-Wno-nan-infinity-disabled -Wno-error=nan-infinity-disabled -Wno-nan-infinity-disabled"
+        # ----------------------------------------------
         run: |  
 
             cmake -B -G Ninja -DCMAKE_BUILD_TYPE=Release ${{ env.BUILD_DIR }} \
