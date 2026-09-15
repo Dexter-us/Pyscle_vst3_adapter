@@ -15,19 +15,19 @@ include(JUCEDefaults)
 
 # Change me!
 # This is the internal name of the project and the name of JUCE's shared code target
-set(PROJECT_NAME "Pamplejuce")
+set(PROJECT_NAME "Pyscleeffect")
 
 # Worry not, JUCE's PRODUCT_NAME can have spaces (and is what DAWs will display)
 set(PRODUCT_NAME "Pyscle adapter")
 
 # Change me! Used for the MacOS bundle name and Installers
-set(COMPANY_NAME "Pamplejuce Company")
+set(COMPANY_NAME "Dexterus")
 
 # Change me! Used for the MacOS bundle identifier (and signing)
 set(BUNDLE_ID "com.pamplejuce.pamplejuce")
 
 # Change me! Set the plugin formats you want built
-set(FORMATS Standalone Unity AU VST3 AUv3)
+set(FORMATS Standalone Unity VST3)
 
 # Force JUCE to work with sccache
 set(CMAKE_POLICY_DEFAULT_CMP0141        NEW      CACHE STRING "" FORCE)
